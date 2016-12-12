@@ -498,17 +498,14 @@
                     beaconEnemiesToKill = Math.max(0, beaconEnemiesToKill - 1);
 
                     if(!freeRoam) {
-                        var delta = Math.max(1.0, Math.floor(100 * 3 * Math.pow(beaconTimeFactor, beaconsCollected)) / 100);
+                        var delta = 2.0; //Math.max(1.0, Math.floor(100 * 3 * Math.pow(beaconTimeFactor, beaconsCollected)) / 100);
                         timeLeft += delta;
                         document.getElementById("timeDeltas").innerHTML = " +" + delta;
                         nextClearTimeDelta = performance.now() + 1000;
                     }
                     var _sound = timeGainSound.play();
                     //timeGainSound.rate(rand(0.95, 1.05), _sound);
-                    if(ammo >= 0 && ammo < 5) {
-                        ammoIndicators[ammo].material.color = new THREE.Vector3(0.1, 1.0, 0.1);
-                    }
-                    ammo = Math.min(5, ammo + 1);
+                    setAmmo(ammo + 1);
                     ammoGainThingEvolution = 0.0;
                 }
             }
@@ -541,8 +538,7 @@
                         noAmmoSound.play();
                         return;
                     }
-                    ammo -= 1;
-                    ammoIndicators[ammo].material.color = new THREE.Vector3(0.3, 0.3, 0.3);
+                    setAmmo(ammo - 1);
                 }
 
                 var bullet = new Object();
@@ -1078,10 +1074,10 @@
                         var pos = new THREE.Vector3(0.214, -0.103, -0.46);
                         for(var i = 0; i < 5; ++i) {
                             ammoIndicators.push(new THREE.Mesh(indicatorGeometry, indicatorMaterial.clone()));
-                            if(i < ammo) ammoIndicators[i].material.color = new THREE.Vector3(0.1, 1.0, 0.1);
                             ammoIndicators[i].position.copy(pos).add(new THREE.Vector3(0, 0, 0.021 * i));
                             grenadeMesh.add(ammoIndicators[i]);
                         }
+                        setAmmo(ammo);
                     }/*, onProgress/*, onError*/);
                 });
 
@@ -1223,6 +1219,17 @@
                 window.addEventListener( 'resize', onWindowResize, false );
             }
 
+            function setAmmo(v) {
+                ammo = Math.max(Math.min(v, 5), 0);
+                for(var i = 0; i < 5; ++i) {
+                    if(i < ammo) {
+                        ammoIndicators[i].material.color = new THREE.Vector3(0.1, 1.0, 0.1);
+                    } else {
+                        ammoIndicators[i].material.color = new THREE.Vector3(0.3, 0.3, 0.3);
+                    }
+                }
+            }
+
             function onWindowResize() {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 weaponCamera.aspect = camera.aspect;
@@ -1344,6 +1351,7 @@
                         beaconEnemiesToKill = 3;
                         currentBeaconIndex = nextBeaconIndex;
                         nextBeaconIndex = undefined;
+                        setAmmo(ammo + 1);
                     }
 
                     // HUD
