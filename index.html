@@ -147,6 +147,21 @@
             var blocker = document.getElementById( 'blocker' );
             var instructions = document.getElementById( 'instructions' );
 
+            function enableGame() {
+                controlsEnabled = true;
+                blocker.style.display = 'none';
+            }
+
+            function disableGame() {
+                controlsEnabled = false;
+
+                blocker.style.display = '-webkit-box';
+                blocker.style.display = '-moz-box';
+                blocker.style.display = 'box';
+
+                instructions.style.display = '';
+            }
+
             // http://www.html5rocks.com/en/tutorials/pointerlock/intro/
 
             var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
@@ -156,17 +171,9 @@
 
                 var pointerlockchange = function ( event ) {
                     if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
-                        controlsEnabled = true;
-
-                        blocker.style.display = 'none';
+                        enableGame();
                     } else {
-                        controlsEnabled = false;
-
-                        blocker.style.display = '-webkit-box';
-                        blocker.style.display = '-moz-box';
-                        blocker.style.display = 'box';
-
-                        instructions.style.display = '';
+                        disableGame();
                     }
                 };
 
@@ -185,14 +192,11 @@
 
                 instructions.addEventListener( 'click', function ( event ) {
                     if(loadingDone) {
-                        instructions.style.display = 'none';
-
                         // Ask the browser to lock the pointer
                         element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
                         element.requestPointerLock();
                     }
                 }, false );
-
             } else {
                 instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
             }
@@ -492,13 +496,18 @@
                     enemyExplosion(enemy.mesh.position);
                     scene.remove(enemy.mesh);
                     beaconEnemiesToKill = Math.max(0, beaconEnemiesToKill - 1);
-                    var delta = Math.max(1.0, Math.floor(100 * 3 * Math.pow(beaconTimeFactor, beaconsCollected)) / 100);
-                    timeLeft += delta;
-                    document.getElementById("timeDeltas").innerHTML = " +" + delta;
-                    nextClearTimeDelta = performance.now() + 1000;
+
+                    if(!freeRoam) {
+                        var delta = Math.max(1.0, Math.floor(100 * 3 * Math.pow(beaconTimeFactor, beaconsCollected)) / 100);
+                        timeLeft += delta;
+                        document.getElementById("timeDeltas").innerHTML = " +" + delta;
+                        nextClearTimeDelta = performance.now() + 1000;
+                    }
                     var _sound = timeGainSound.play();
                     //timeGainSound.rate(rand(0.95, 1.05), _sound);
-                    ammoIndicators[ammo].material.color = new THREE.Vector3(0.1, 1.0, 0.1);
+                    if(ammo >= 0 && ammo < 5) {
+                        ammoIndicators[ammo].material.color = new THREE.Vector3(0.1, 1.0, 0.1);
+                    }
                     ammo = Math.min(5, ammo + 1);
                     ammoGainThingEvolution = 0.0;
                 }
@@ -860,6 +869,8 @@
                 this.velocity.add(force.clone().multiplyScalar(dt));
             }
 
+            var freeRoam = false;
+
             // init, animate
 
             init();
@@ -944,17 +955,25 @@
                             break;
 
 
-                        case 74:
-                            ammo = 5;
-                            for(var i = 0; i < 5; ++i) ammoIndicators[i].material.color = new THREE.Vector3(1.0, 1.0, 1.0);
+                        case 75: // k
+                            if(freeRoam) {
+                                savedPos = playerObject.position.clone();
+                            }
                             break;
-                        case 75:
-                            savedPos = playerObject.position.clone();
-                            break;
-                        case 76:
-                            if(savedPos) {
+                        case 76: // l
+                            if(freeRoam && savedPos) {
                                 playerObject.position.copy(savedPos);
                             }
+                            break;
+
+                        case 8: // backspace
+                            freeRoam = true;
+                            enableGame();
+                            document.getElementById('info').innerHTML = "<span style='color: 0x00ff00'>free roam mode<br/>K to save position, L to teleport</span>"
+                            break;
+
+                        case 13: // enter
+                            location.reload();
                             break;
 
                         /*case 76: // l
@@ -1292,11 +1311,13 @@
                                     nextBeaconIndex = currentBeaconIndex;
                                     while(nextBeaconIndex == currentBeaconIndex)
                                         nextBeaconIndex = Math.floor(Math.random()*(maxIndex+1));
-                                    var delta = beaconTimeMatrix[currentBeaconIndex][nextBeaconIndex] * Math.pow(beaconTimeFactor, beaconsCollected);
-                                    delta = Math.floor(100 * delta) / 100;
-                                    timeLeft += delta;
-                                    document.getElementById("timeDeltas").innerHTML = " +" + delta;
-                                    nextClearTimeDelta = performance.now() + 1000;
+                                    if(!freeRoam) {
+                                        var delta = beaconTimeMatrix[currentBeaconIndex][nextBeaconIndex] * Math.pow(beaconTimeFactor, beaconsCollected);
+                                        delta = Math.floor(100 * delta) / 100;
+                                        timeLeft += delta;
+                                        document.getElementById("timeDeltas").innerHTML = " +" + delta;
+                                        nextClearTimeDelta = performance.now() + 1000;
+                                    }
                                 }
                             } else {
                                 beaconIcon.visible = true;
@@ -1342,19 +1363,32 @@
                     beaconPosNDC.multiply(new THREE.Vector3(window.innerWidth/2, window.innerHeight/2, 0.0));
                     beaconIcon.position.copy(beaconPosNDC);
 
-                    timeLeft -= dt;
-                    var minutes = Math.floor(timeLeft / 60);
-                    var seconds = Math.floor(timeLeft - minutes*60);
-                    if(minutes < 10) minutes = "0" + minutes;
-                    if(seconds < 10) seconds = "0" + seconds;
-                    document.getElementById("timeLeft").innerHTML = minutes + ":" + seconds;
-                    if(timeLeft < 10.0) {
-                        document.getElementById("timeLeft").style.color = "#ff4040";
+                    if(!freeRoam) {
+                        timeLeft = Math.max(timeLeft - dt, 0);
+                        var minutes = Math.floor(timeLeft / 60);
+                        var seconds = Math.floor(timeLeft - minutes*60);
+                        if(minutes < 10) minutes = "0" + minutes;
+                        if(seconds < 10) seconds = "0" + seconds;
+                        document.getElementById("timeLeft").innerHTML = minutes + ":" + seconds;
+                        if(timeLeft < 10.0) {
+                            document.getElementById("timeLeft").style.color = "#ff4040";
+                        } else {
+                            document.getElementById("timeLeft").style.color = "#40ff40";
+                        }
+                        if(nextClearTimeDelta < time) {
+                            document.getElementById("timeDeltas").innerHTML = "";
+                        }
+
+                        if(timeLeft <= 0) {
+                            var instructions = document.getElementById("instructions");
+                            instructions.innerHTML = "<span style='font-size: 40'>Time's up!<br/>You reached " + beaconsCollected + " beacons!<br/>If you want to try out things in free-roam mode, press BACKSPACE. Press RETURN to retry!</span>";
+                            disableGame();
+                        }
+
+                        document.getElementById("beaconsGot").innerHTML = beaconsCollected;
                     } else {
-                        document.getElementById("timeLeft").style.color = "#40ff40";
-                    }
-                    if(nextClearTimeDelta < time) {
-                        document.getElementById("timeDeltas").innerHTML = "";
+                        ammo = 5;
+                        for(var i = 0; i < 5; ++i) ammoIndicators[i].material.color = new THREE.Vector3(1.0, 1.0, 1.0);
                     }
 
                     /*document.getElementById("inhibitorsLeft").innerHTML = beaconEnemiesToKill;
@@ -1364,7 +1398,6 @@
                         document.getElementById("inhibitorsLeft").style.color = "#40ff40";
                     }*/
 
-                    document.getElementById("beaconsGot").innerHTML = beaconsCollected;
                 } else {
                     if(beaconSound.playing()) beaconSound.pause();
                     prevTime = performance.now();
