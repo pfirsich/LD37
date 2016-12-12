@@ -131,6 +131,8 @@
 
             shieldDownSound = new Howl({src:['Sounds/ShieldDown.ogg']});
 
+            noAmmoSound = new Howl({src:['Sounds/NoAmmo.ogg']});
+
             var camera, scene, renderer;
             var geometry, boxMaterial, mesh;
             var controlsEnabled = false;
@@ -268,6 +270,9 @@
                 rifle: new Howl({src: ['Sounds/Fire1.ogg'], volume: 0.3}),
                 energyGun: new Howl({src: ['Sounds/Fire2.ogg'], volume: 0.3}),
             }
+
+            var ammo = 2;
+            var ammoIndicators = [];
 
             var rifleMesh = new THREE.Object3D();
             var grenadeMesh = new THREE.Object3D();
@@ -469,6 +474,8 @@
                     nextClearTimeDelta = performance.now() + 1000;
                     var _sound = timeGainSound.play();
                     //timeGainSound.rate(rand(0.95, 1.05), _sound);
+                    ammoIndicators[ammo].material.color = new THREE.Vector3(0.1, 1.0, 0.1);
+                    ammo = Math.min(5, ammo + 1);
                 }
             }
 
@@ -493,6 +500,17 @@
             }
 
             function shoot(position, direction, type, creator) {
+                weaponKnockback = 1.0;
+
+                if(type == 'energyGun') {
+                    if(ammo == 0) {
+                        noAmmoSound.play();
+                        return;
+                    }
+                    ammo -= 1;
+                    ammoIndicators[ammo].material.color = new THREE.Vector3(0.3, 0.3, 0.3);
+                }
+
                 var bullet = new Object();
                 bullet.semimass = bulletMass[type];
                 bullet.alive = true;
@@ -964,6 +982,9 @@
                     }/*, onProgress/*, onError*/);
                 });
 
+                var indicatorGeometry = new THREE.BoxGeometry(0.017, 0.01, 0.017, 1, 1, 1);
+                var indicatorMaterial = new THREE.MeshPhongMaterial({color: 0x4c4c4c});
+
                 // energy ball thing
                 texLoader.load("Waffe2.png", function(texture) {
                     var material = new THREE.MeshPhongMaterial({map: texture});
@@ -973,7 +994,13 @@
                         grenadeMesh.visible = false;
                         weaponScene.add(grenadeMesh);
 
-
+                        var pos = new THREE.Vector3(0.214, -0.103, -0.46);
+                        for(var i = 0; i < 5; ++i) {
+                            ammoIndicators.push(new THREE.Mesh(indicatorGeometry, indicatorMaterial.clone()));
+                            if(i < ammo) ammoIndicators[i].material.color = new THREE.Vector3(0.1, 1.0, 0.1);
+                            ammoIndicators[i].position.copy(pos).add(new THREE.Vector3(0, 0, 0.021 * i));
+                            grenadeMesh.add(ammoIndicators[i]);
+                        }
                     }/*, onProgress/*, onError*/);
                 });
 
@@ -1149,7 +1176,6 @@
                         nextShot[currentWeapon] = time + shotInterval[currentWeapon];
                         var dir = new THREE.Vector4(0, 0, -1, 0).applyMatrix4(camera.matrixWorld);
                         shoot(playerObject.position, new THREE.Vector3(dir.x, dir.y, dir.z), currentWeapon, undefined);
-                        weaponKnockback = 1.0;
                     }
 
                     weaponScene.position.z = weaponKnockback * 0.05;
@@ -1197,7 +1223,7 @@
                             break;
                         case 'relocating':
                             beaconRotationSpeed = 10.0;
-                            minBeaconScale = Math.max(minBeaconScale - 0.5 * dt, 0.0);
+                            minBeaconScale = Math.max(minBeaconScale - 1.5 * dt, 0.0);
                             maxBeaconScale = Math.min(maxBeaconScale + 1.0 * dt, 3.0);
                             break;
                     }
