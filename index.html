@@ -207,7 +207,7 @@
 
             var weaponLight, sceneLight;
 
-            var leftMouseDown;
+            var shootButtonDown;
 
             var randoBox = new THREE.SphereGeometry(0.2, 12, 12);
             var randoBigSphere = new THREE.SphereGeometry(0.5, 12, 12);
@@ -973,23 +973,23 @@
                 };
 
                 var onMouseDown = function(event) {
-                    if(event.button == 0) leftMouseDown = true;
+                    if(event.button == 0) {
+                        shootButtonDown = true;
+                        rifleMesh.visible = true;
+                        grenadeMesh.visible = false;
+                        currentWeapon = "rifle";
+                    }
 
-                    if(event.button == 2) { // Switch weapons
-                        if(currentWeapon == "rifle") {
-                            rifleMesh.visible = false;
-                            grenadeMesh.visible = true;
-                            currentWeapon = "energyGun";
-                        } else {
-                            rifleMesh.visible = true;
-                            grenadeMesh.visible = false;
-                            currentWeapon = "rifle";
-                        }
+                    if(event.button == 2) {
+                        shootButtonDown = true;
+                        rifleMesh.visible = false;
+                        grenadeMesh.visible = true;
+                        currentWeapon = "energyGun";
                     }
                 }
 
                 var onMouseUp = function(event) {
-                    if(event.button == 0) leftMouseDown = false;
+                    shootButtonDown = false;
                 }
 
                 document.addEventListener('keydown', onKeyDown, false);
@@ -1215,7 +1215,7 @@
                     playerObject.actor.velocity.add(moveAccell.normalize().multiplyScalar(dt * accell));
 
                     // shooting
-                    if(leftMouseDown && nextShot[currentWeapon] < time) {
+                    if(shootButtonDown && nextShot[currentWeapon] < time) {
                         nextShot[currentWeapon] = time + shotInterval[currentWeapon];
                         var dir = new THREE.Vector4(0, 0, -1, 0).applyMatrix4(camera.matrixWorld);
                         shoot(playerObject.position, new THREE.Vector3(dir.x, dir.y, dir.z), currentWeapon, undefined);
