@@ -129,6 +129,8 @@
 
             timeGainSound = new Howl({src:['Sounds/TimeGain.ogg'], volume: 0.1});
 
+            shieldDownSound = new Howl({src:['Sounds/ShieldDown.ogg']});
+
             var camera, scene, renderer;
             var geometry, boxMaterial, mesh;
             var controlsEnabled = false;
@@ -324,21 +326,25 @@
             var minBeaconScale;
             var maxBeaconScale;
             var beaconBarrier;
-            var beaconEnemiesToKill = 5;
+            var beaconEnemiesToKill = 2;
 
             var beaconTimeMatrix = [
-                [30, 30, 30, 30, 30],
-                [30, 30, 30, 30, 30],
-                [30, 30, 30, 30, 30],
-                [30, 30, 30, 30, 30],
-                [30, 30, 30, 30, 30],
+                [ 0, 30, 30, 30, 30, 30, 30],
+                [30,  0, 30, 30, 30, 30, 30],
+                [30, 30,  0, 30, 30, 30, 30],
+                [30, 30, 30,  0, 30, 30, 30],
+                [30, 30, 30, 30,  0, 30, 30],
+                [30, 30, 30, 30, 30,  0, 30],
+                [30, 30, 30, 30, 30, 30,  0],
             ]
 
             var beaconsCollected = 0;
-            var maxBeaconIndex = [0, 1, 2, 10, 15];
+            var maxBeaconIndex = [0, 1, 2, 10, 15, 20, 25];
             var currentBeaconIndex = 0;
             var nextBeaconIndex = undefined;
             var beaconTimeFactor = 0.9;
+            var beaconIconTexture;
+            var beaconIconShieldTexture;
 
             function updateEnemies(dt) {
                 if(nextSpawnEnemy < performance.now() && enemies.length < 15) {
@@ -966,6 +972,8 @@
                         grenadeMesh = new THREE.Mesh(geometry, material);
                         grenadeMesh.visible = false;
                         weaponScene.add(grenadeMesh);
+
+
                     }/*, onProgress/*, onError*/);
                 });
 
@@ -1028,11 +1036,17 @@
                     hudScene.add(mesh);
                 })
 
-                texLoader.load("BeaconIconSmall.png", function(texture) {
-                    var width = 32;
-                    var height = 32;
+
+                texLoader.load("BeaconIconSmall_shield.png", function(texture) {
+                    beaconIconShieldTexture = texture;
+                    var width = 64;
+                    var height = 64;
                     beaconIcon = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({map: texture, transparent: true}));
                     hudScene.add(beaconIcon);
+                })
+
+                texLoader.load("BeaconIconSmall.png", function(texture) {
+                    beaconIconTexture = texture;
                 })
 
                 // enemies
@@ -1157,7 +1171,11 @@
                             minBeaconScale = 2.0;
                             maxBeaconScale = 2.5;
                             beaconBarrier.visible = true;
-                            if(beaconEnemiesToKill <= 0) beaconState = 'vulnerable';
+                            if(beaconEnemiesToKill <= 0) {
+                                beaconState = 'vulnerable';
+                                shieldDownSound.play();
+                                beaconIcon.material.map = beaconIconTexture;
+                            }
                             break;
                         case 'vulnerable':
                             beaconBarrier.visible = false;
@@ -1174,7 +1192,7 @@
                                 nextBeaconIndex = currentBeaconIndex;
                                 while(nextBeaconIndex == currentBeaconIndex)
                                     nextBeaconIndex = Math.floor(Math.random()*(maxIndex+1));
-                                timeLeft += beaconTimeMatrix[currentBeaconIndex][nextBeaconIndex];
+                                timeLeft += Math.max(15, beaconTimeMatrix[currentBeaconIndex][nextBeaconIndex]);
                             }
                             break;
                         case 'relocating':
@@ -1191,6 +1209,7 @@
 
                     if(beaconState == 'relocating' && Math.abs(scale) < 0.1) {
                         beaconPortSound.play();
+                        beaconIcon.material.map = beaconIconShieldTexture;
 
                         beacon.position.copy(beaconPositions[nextBeaconIndex]);
                         beaconState = 'hardened';
