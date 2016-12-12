@@ -18,14 +18,10 @@
             }
 
             #blocker {
-
                 position: absolute;
-
                 width: 100%;
                 height: 100%;
-
                 background-color: rgba(0,0,0,0.5);
-
             }
 
             #instructions {
@@ -80,15 +76,15 @@
 
         <div id="blocker">
             <div id="instructions">
-                <span style="font-size:40px">Click to play</span>
-                <br />
-                While walking the cyberspace you were trapped in a strange place and your time is running out!
-                Destroy inhibitors to gain time and wear down the barrier of the beacon!
-                Try to keep the beacon from contacting security systems.
+                <span style="color: 0xffdddd">
+                    <br />
+                    Try to reach as many beacons as you can.<br/>Destroy the drones to regain ammunition for your secondary weapon.<br/>Use it to rocket jump!
+                    <br/><br/>
+                </span>
+                (W, A, S, D = Move, SPACE = (double) Jump, MOUSE = Look around, LEFT CLICK = Shoot, RIGHT CLICK = Switch weapons)
                 <br/><br/>
-                (W, A, S, D = Move, SPACE = Jump, MOUSE = Look around, LEFT CLICK = Shoot, RIGHT CLICK = Switch weapons)
-                <br/><br/>
-                <span style="font-size:40px">Loading...<span id="loadingProgress">0</span>%</span>
+                <span style="font-size:40px">Loading...<span id="loadingProgress">0</span>%</span><br/>
+                <span style="font-size:40px">Click to play</span><br/>
             </div>
         </div>
 
@@ -97,7 +93,7 @@
                 <span style="text-align: right;">beacons got: <span id="beaconsGot">0</span></span>
             </div>
             time left: <span id="timeLeft">00:00</span><span id="timeDeltas" style="color: #80ff80"></span><br/>
-            inhibitors left: <span id="inhibitorsLeft" style="color: #ffff00"></span>
+            drones left: <span id="inhibitorsLeft" style="color: #ffff00"></span>
         </div>
 
         <script>
