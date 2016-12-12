@@ -76,9 +76,10 @@
 
         <div id="blocker">
             <div id="instructions">
+                <span style="font-size: 50px">Please strongly consider using Chrome for this game!</span>
                 <span style="color: 0xffdddd">
                     <br />
-                    Try to reach as many beacons as you can.<br/>Destroy the drones to regain ammunition for your secondary weapon.<br/>Use it to rocket jump!
+                    Try to reach as many beacons as you can.<br/>Destroy the drones to regain ammunition and time for your secondary weapon.<br/>Use it to rocket jump! <br/><a href="">https://github.com/pfirsich/LD37</a>
                     <br/><br/>
                 </span>
                 (W, A, S, D = Move, SPACE = (double) Jump, MOUSE = Look around, LEFT CLICK = Shoot, RIGHT CLICK = Switch weapons)
@@ -938,6 +939,15 @@
                             break;
 
                         case 50: // 2
+                            break;
+
+                        case 75:
+                            savedPos = playerObject.position.clone();
+                            break;
+                        case 76:
+                            if(savedPos) {
+                                playerObject.position.copy(savedPos);
+                            }
                             break;
 
                         /*case 76: // l
