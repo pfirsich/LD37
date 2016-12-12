@@ -405,6 +405,7 @@
                 new PhysicsActor(enemy.mesh);
                 enemy.mesh.actor.friction = 1.0;
                 enemy.mesh.actor.height = 1.0;
+                enemy.mesh.actor.edgeGuard = true;
                 enemy.moveDir = new THREE.Vector3();
                 //console.log("spawn: ", enemyType);
             }
@@ -673,6 +674,8 @@
                 this.jumpsLeft = 0;
             }
 
+            var printIt = true;
+
             PhysicsActor.prototype.updatePhysics = function(dt, print=false) {
                 // gravity
                 this.velocity.y -= 9.8 * 2.0 * dt;
@@ -683,9 +686,7 @@
                 this.velocity.z -= this.velocity.z * this.friction * dt;
                 if(print) console.log("pre integrage", this.velocity);
 
-                this.obj.translateX(this.velocity.x * dt);
-                this.obj.translateY(this.velocity.y * dt);
-                this.obj.translateZ(this.velocity.z * dt);
+                this.obj.position.add(this.velocity.clone().multiplyScalar(dt));
                 if(print) console.log("pos", this.obj.position);
 
                 // floor rays
@@ -702,7 +703,11 @@
                     if(print) console.log("raycast: ", raycaster.ray.origin, raycaster.ray.direction);
                     var rayIntersections = raycaster.intersectObject(levelGeometry, true);
                     if(print) console.log("closest per ray:", rayIntersections[0].distance, rayIntersections[0].face.normal);
-                    if(rayIntersections.length > 0) intersections.push(rayIntersections[0]); // remember closest
+                    if(rayIntersections.length > 0) {
+                        rayIntersections[0].dirX = Math.cos(angle);
+                        rayIntersections[0].dirZ = Math.sin(angle);
+                        intersections.push(rayIntersections[0]); // remember closest
+                    }
                 }
                 intersections.sort(function(a, b) {return a.distance - b.distance;});
 
@@ -726,6 +731,22 @@
                         }
                         isOnObject = true;
                         break;
+                    }
+                }
+
+                if(this.edgeGuard) {
+                    var edgeNormal = new THREE.Vector3();
+                    var onEdge = false;
+                    for(var i = 0; i < intersections.length; ++i) {
+                        if(intersections[i].distance > this.height * 1.5) {
+                            edgeNormal.add(new THREE.Vector3(intersections[i].dirX, 0, intersections[i].dirZ));
+                            onEdge = true;
+                        }
+                    }
+                    if(onEdge) {
+                        edgeNormal.normalize();
+                        this.obj.position.sub(edgeNormal.clone().multiplyScalar(this.radius*0.05));
+                        this.velocity.sub(edgeNormal.multiplyScalar(this.velocity.dot(edgeNormal)));
                     }
                 }
 
@@ -765,12 +786,7 @@
             }
 
             PhysicsActor.prototype.applyForce = function(force, dt) {
-                if(this.edgeGuard == false) {
-                    this.velocity.add(force.clone().multiplyScalar(dt));
-                } else {
-
-                    // Make sure the this can not walk off edges
-                }
+                this.velocity.add(force.clone().multiplyScalar(dt));
             }
 
             // init, animate
@@ -1105,12 +1121,13 @@
 
                     // movement
                     var accell = 120.0;
-                    var moveAccell = new THREE.Vector3();
+                    var moveAccell = new THREE.Vector4(0, 0, 0, 0);
                     if(moveForward) moveAccell.z = -accell;
                     if(moveBackward) moveAccell.z = accell;
 
                     if(moveLeft) moveAccell.x = -accell;
                     if(moveRight) moveAccell.x = accell;
+                    playerObject.localToWorld(moveAccell);
                     playerObject.actor.velocity.add(moveAccell.normalize().multiplyScalar(dt * accell));
 
                     // shooting
