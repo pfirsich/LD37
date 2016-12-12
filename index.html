@@ -348,7 +348,7 @@
             var maxBeaconIndex = [0, 1, 2, 5, 8, 10, 12];
             var currentBeaconIndex = 0;
             var nextBeaconIndex = undefined;
-            var beaconTimeFactor = 0.85;
+            var beaconTimeFactor = 0.95;
             var beaconIconTexture;
             var beaconIconShieldTexture;
 
@@ -662,10 +662,11 @@
                                     } else {
                                         var blastRadius = 3.0;
                                         if(rel.length() < blastRadius) {
-                                            var blastStrength = (1.0 - rel.length() / blastRadius) * -20;
-                                            playerObject.actor.velocity.add(rel.clone().normalize().multiply(new THREE.Vector3(1.0, 0.6, 1.0)).multiplyScalar(blastStrength));
+                                            var blastStrength = (1.0 - rel.length() / blastRadius) * -80;
+                                            playerObject.actor.velocity.add(rel.clone().normalize().multiply(new THREE.Vector3(1.0, 0.0, 1.0)).multiplyScalar(blastStrength));
                                         }
                                     }
+                                    //playerObject.actor.collide();
                                 }
                             }
                         }
@@ -730,19 +731,7 @@
 
             var printIt = true;
 
-            PhysicsActor.prototype.updatePhysics = function(dt, print=false) {
-                // gravity
-                this.velocity.y -= 9.8 * 2.0 * dt;
-
-                // friction
-                if(print) console.log("pre friction", this.velocity);
-                this.velocity.x -= this.velocity.x * this.friction * dt;
-                this.velocity.z -= this.velocity.z * this.friction * dt;
-                if(print) console.log("pre integrage", this.velocity);
-
-                this.obj.position.add(this.velocity.clone().multiplyScalar(dt));
-                if(print) console.log("pos", this.obj.position);
-
+            PhysicsActor.prototype.collide = function(dt, print=false) {
                 // floor rays
                 var intersections = [];
                 raycaster.ray.direction.set(0, -1, 0);
@@ -837,6 +826,22 @@
                 if (isOnObject === true && this.velocity.y <= 0.0) {
                     this.jumpsLeft = 2;
                 }
+            }
+
+            PhysicsActor.prototype.updatePhysics = function(dt, print=false) {
+                // gravity
+                this.velocity.y -= 9.8 * 2.0 * dt;
+
+                // friction
+                if(print) console.log("pre friction", this.velocity);
+                this.velocity.x -= this.velocity.x * this.friction * dt;
+                this.velocity.z -= this.velocity.z * this.friction * dt;
+                if(print) console.log("pre integrage", this.velocity);
+
+                this.obj.position.add(this.velocity.clone().multiplyScalar(dt));
+                if(print) console.log("pos", this.obj.position);
+
+                this.collide(dt);
             }
 
             PhysicsActor.prototype.applyForce = function(force, dt) {
@@ -1251,22 +1256,29 @@
                             minBeaconScale = 2.0;
                             maxBeaconScale = 2.5;
                             beaconBarrier.visible = false;
-                            if(playerBeaconRel.length() < 5.0) {
-                                beaconState = 'relocating';
-                                beaconPortSound.play();
+                            if(lineOfSight(playerObject.position, beacon.position)) {
+                                if(playerBeaconRel.length() < 5.0) {
+                                    beaconIcon.visible = false;
+                                    beaconState = 'relocating';
+                                    beaconPortSound.play();
 
-                                beaconsCollected += 1;
-                                var maxIndex = currentBeaconIndex;
-                                for(var i = 0; i < maxBeaconIndex.length; ++i) {
-                                    if(maxBeaconIndex[i] > beaconsCollected) break;
-                                    maxIndex = i;
+                                    beaconsCollected += 1;
+                                    var maxIndex = currentBeaconIndex;
+                                    for(var i = 0; i < maxBeaconIndex.length; ++i) {
+                                        if(maxBeaconIndex[i] > beaconsCollected) break;
+                                        maxIndex = i;
+                                    }
+                                    nextBeaconIndex = currentBeaconIndex;
+                                    while(nextBeaconIndex == currentBeaconIndex)
+                                        nextBeaconIndex = Math.floor(Math.random()*(maxIndex+1));
+                                    var delta = beaconTimeMatrix[currentBeaconIndex][nextBeaconIndex] * Math.pow(beaconTimeFactor, beaconsCollected);
+                                    delta = Math.floor(100 * delta) / 100;
+                                    timeLeft += delta;
+                                    document.getElementById("timeDeltas").innerHTML = " +" + delta;
+                                    nextClearTimeDelta = performance.now() + 1000;
                                 }
-                                nextBeaconIndex = currentBeaconIndex;
-                                while(nextBeaconIndex == currentBeaconIndex)
-                                    nextBeaconIndex = Math.floor(Math.random()*(maxIndex+1));
-                                timeLeft += beaconTimeMatrix[currentBeaconIndex][nextBeaconIndex] * Math.pow(beaconTimeFactor, beaconsCollected);
-                                document.getElementById("timeDeltas").innerHTML = " +" + delta;
-                                nextClearTimeDelta = performance.now() + 1000;
+                            } else {
+                                beaconIcon.visible = true;
                             }
                             break;
                         case 'relocating':
