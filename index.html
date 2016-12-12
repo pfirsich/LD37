@@ -336,22 +336,31 @@
             var beaconEnemiesToKill = 2;
 
             var beaconTimeMatrix = [
-                [ 0, 30, 30, 30, 30, 30, 30],
-                [30,  0, 30, 30, 30, 30, 30],
-                [30, 30,  0, 30, 30, 30, 30],
-                [30, 30, 30,  0, 30, 30, 30],
-                [30, 30, 30, 30,  0, 30, 30],
-                [30, 30, 30, 30, 30,  0, 30],
-                [30, 30, 30, 30, 30, 30,  0],
+                [ 0, 45, 45, 45, 45, 45, 45],
+                [45,  0, 45, 45, 45, 45, 45],
+                [45, 45,  0, 45, 45, 45, 45],
+                [45, 45, 45,  0, 45, 45, 45],
+                [45, 45, 45, 45,  0, 45, 45],
+                [45, 45, 45, 45, 45,  0, 45],
+                [45, 45, 45, 45, 45, 45,  0],
             ]
 
             var beaconsCollected = 0;
-            var maxBeaconIndex = [0, 1, 2, 10, 15, 20, 25];
+            var maxBeaconIndex = [0, 1, 2, 5, 8, 10, 12];
             var currentBeaconIndex = 0;
             var nextBeaconIndex = undefined;
-            var beaconTimeFactor = 0.9;
+            var beaconTimeFactor = 0.85;
             var beaconIconTexture;
             var beaconIconShieldTexture;
+
+            function lineOfSight(from, to) {
+                raycaster.ray.origin.copy(from);
+                var rel = to.clone().sub(from);
+                raycaster.ray.direction.copy(rel.clone().normalize());
+                var intersections = raycaster.intersectObject(levelGeometry, true);
+                if(intersections.length == 0 || intersections[0].distance > rel.length()) return true;
+                return false;
+            }
 
             function updateEnemies(dt) {
                 if(nextSpawnEnemy < performance.now() && enemies.length < 15) {
@@ -387,10 +396,12 @@
                 }
 
                 // update enemy
+                var visible = 0;
                 for(var i = enemies.length - 1; i >= 0; --i) {
                     var enemy = enemies[i];
                     var eType = enemy.enemyType;
                     enemy.mesh.material = enemyMaterials[eType];
+                    enemy.age += dt;
 
                     if(enemy.nextThink < performance.now()) {
                         enemy.state = enemyThink[eType](enemy);
@@ -400,6 +411,16 @@
                     // act
                     enemy.mesh.actor.applyForce(enemy.moveDir, dt);
                     enemy.mesh.actor.updatePhysics(dt);
+
+                    if(lineOfSight(playerObject.position, enemy.mesh.position)) {
+                        visible += 1;
+                        enemy.age = 0.0;
+                    } else {
+                        if(enemy.age > 10.0) {
+                            scene.remove(enemy.mesh);
+                            enemies.splice(i, 1);
+                        }
+                    }
                 }
             }
 
@@ -420,6 +441,7 @@
                 enemy.mesh.actor.height = 1.0;
                 enemy.mesh.actor.edgeGuard = true;
                 enemy.moveDir = new THREE.Vector3();
+                enemy.age = 0.0;
                 //console.log("spawn: ", enemyType);
             }
 
@@ -844,6 +866,8 @@
                 playerPitchObject = new THREE.Object3D();
                 playerPitchObject.add(camera);
                 playerObject = new THREE.Object3D();
+                playerObject.position.set(0, 1, 0);
+                playerObject.position.set(11, 60, -60);
                 playerObject.add(playerPitchObject);
                 new PhysicsActor(playerObject);
                 playerObject.actor.rayFloorCount = 8;
@@ -865,6 +889,7 @@
                 }
                 document.addEventListener('mousemove', onMouseMove, false);
 
+                var spaceWasDown = true;
                 var onKeyDown = function ( event ) {
                     switch ( event.keyCode ) {
                         case 38: // up
@@ -887,25 +912,25 @@
                             break;
 
                         case 32: // space
-                            if (playerObject.actor.jumpsLeft > 0) {
+                            if (playerObject.actor.jumpsLeft > 0 && spaceWasDown) {
                                 //console.log("jump!");
                                 playerObject.actor.velocity.y = 8;
                                 playerObject.position.y += 0.01;
                                 playerObject.actor.jumpsLeft -= 1;
+                                spaceWasDown = false;
                             }
                             break;
-
-                        case 49: // 1
+                        case 32: // 1
                             break;
 
                         case 50: // 2
                             break;
 
-                        case 76: // l
+                        /*case 76: // l
                             mesh = new THREE.Mesh(randoBigSphere, randoMatBlue);
                             mesh.position.copy(randomFloorPosition());
                             scene.add(mesh);
-                            break;
+                            break;*/
                     }
                     //console.log("key: ", event.keyCode);
                 };
@@ -930,6 +955,9 @@
                         case 39: // right
                         case 68: // d
                             moveRight = false;
+                            break;
+                        case 32:
+                            spaceWasDown = true;
                             break;
                     }
                 };
@@ -1079,7 +1107,7 @@
                     beaconIconTexture = texture;
                 })
 
-                ammoGainThing = new THREE.Mesh(new THREE.SphereGeometry(0.2, 32, 32), new THREE.MeshBasicMaterial({color: 0x60ff60, transparent: true, opacity: 0.5}));
+                ammoGainThing = new THREE.Mesh(new THREE.SphereGeometry(0.2, 32, 32), new THREE.MeshPhongMaterial({color: 0x60ff60, transparent: true, opacity: 0.5}));
                 ammoGainThing.position.set(0.27, -0.104, -0.444);
                 ammoGainThing.scale.set(0.1, 0.1, 0.1);
                 weaponScene.add(ammoGainThing);
@@ -1121,10 +1149,6 @@
                         beacon.add(beaconBarrier);
                     })
                 })
-
-
-                // objects
-                playerObject.position.y = 1.0;
 
                 sceneLight = new THREE.DirectionalLight( 0xffffbb, 1 );
                 sceneLight.position.set(-1, -1, -1);
@@ -1255,7 +1279,7 @@
 
                         beacon.position.copy(beaconPositions[nextBeaconIndex]);
                         beaconState = 'hardened';
-                        beaconEnemiesToKill = 5;
+                        beaconEnemiesToKill = 3;
                         currentBeaconIndex = nextBeaconIndex;
                         nextBeaconIndex = undefined;
                     }
