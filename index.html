@@ -238,7 +238,8 @@
             };
 
             var bulletOffset = {
-                rifle: new THREE.Vector4(0.25, -0.13, -2.0, 0.0),
+                //rifle: new THREE.Vector4(0.25, -0.13, -2.0, 0.0),
+                rifle: new THREE.Vector4(0.0, 0.0, 0.0, 0.0),
                 energyGun: new THREE.Vector4(0.0, -0.0, -0.0, 0.0),
             }
 
@@ -652,11 +653,17 @@
                                         }
                                     }
 
+                                    var rel = playerObject.position.clone().sub(bullet.mesh.position);
                                     if(bullet.bulletType == 'energyGun') {
-                                        var rel = playerObject.position.clone().sub(bullet.mesh.position);
                                         if(rel.length() < blastRadius) {
                                             blastStrength = (1.0 - rel.length() / blastRadius) * maxBlast * 1.0;
                                             playerObject.actor.velocity.add(rel.clone().normalize().multiply(new THREE.Vector3(1.0, blastYRescale, 1.0)).multiplyScalar(blastStrength));
+                                        }
+                                    } else {
+                                        var blastRadius = 3.0;
+                                        if(rel.length() < blastRadius) {
+                                            var blastStrength = (1.0 - rel.length() / blastRadius) * -20;
+                                            playerObject.actor.velocity.add(rel.clone().normalize().multiply(new THREE.Vector3(1.0, 0.6, 1.0)).multiplyScalar(blastStrength));
                                         }
                                     }
                                 }
