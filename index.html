@@ -53,19 +53,25 @@
                 text-align: center;
 
                 cursor: pointer;
-                font-size: 20px;
+                font-size: 25px;
 
             }
 
-            #time {
+            #info {
+                margin: 0px;
                 position:absolute;
-                font-size: 60px;
-                color: #40ff40;
+                font-size: 45px;
+                font-family: "Inconsolata", monospace;
+                color: #000000;
+                font-weight: bold;
+                width: 100%;
             }
 
         </style>
     </head>
     <body>
+        <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+
         <script src="js/three.js"></script>
         <script src="js/howler.core.js"></script>
         <script src="js/plugins/howler.spatial.js"></script>
@@ -86,8 +92,12 @@
             </div>
         </div>
 
-        <div id="time">
-            Time left: <span id="timeLeft">00:00</span>
+        <div id="info">
+            <div style="float: right;">
+                <span style="text-align: right;">beacons got: <span id="beaconsGot">0</span></span>
+            </div>
+            time left: <span id="timeLeft">00:00</span><span id="timeDeltas" style="color: #80ff80"></span><br/>
+            inhibitors left: <span id="inhibitorsLeft" style="color: #ffff00"></span>
         </div>
 
         <script>
@@ -117,13 +127,17 @@
             beaconPortSound = new Howl({src:['Sounds/Beacon.ogg']});
             //beaconPortSound.pannerAttr(pannerAttrs);
 
+            timeGainSound = new Howl({src:['Sounds/TimeGain.ogg'], volume: 0.1});
+
             var camera, scene, renderer;
             var geometry, boxMaterial, mesh;
             var controlsEnabled = false;
             var playerPitchObject, playerObject;
             var beaconIcon;
-            var timeLeft = 60*1000;
+            var timeLeft = 60;
             var loadingDone = false;
+
+            var nextClearTimeDelta = 0;
 
             var levelGeometry;
 
@@ -294,6 +308,7 @@
             var enemyThink = {};
 
             enemyThink['cannonFodder'] = function(enemy) {
+                enemy.moveDir = new THREE.Vector3(rand(-1, 1), 0.0, rand(-1, 1)).multiplyScalar(10);
                 return enemy.state;
             }
 
@@ -305,16 +320,29 @@
             var beaconMaterial;
             var beaconGeometry;
             var beaconPositions = [];
-            var nextBeaconPositionIndex = 1;
             var beaconState = 'hardened';
             var minBeaconScale;
             var maxBeaconScale;
             var beaconBarrier;
-            var beaconEnemiesToKill = 1;
+            var beaconEnemiesToKill = 5;
+
+            var beaconTimeMatrix = [
+                [30, 30, 30, 30, 30],
+                [30, 30, 30, 30, 30],
+                [30, 30, 30, 30, 30],
+                [30, 30, 30, 30, 30],
+                [30, 30, 30, 30, 30],
+            ]
+
+            var beaconsCollected = 0;
+            var maxBeaconIndex = [0, 1, 2, 10, 15];
+            var currentBeaconIndex = 0;
+            var nextBeaconIndex = undefined;
+            var beaconTimeFactor = 0.9;
 
             function updateEnemies(dt) {
-                if(nextSpawnEnemy < performance.now() && enemies.length < 40) {
-                    nextSpawnEnemy = performance.now() + 2000;
+                if(nextSpawnEnemy < performance.now() && enemies.length < 15) {
+                    nextSpawnEnemy = performance.now() + 200;
                     spawnSpawner(randomChoice(enemyTypes));
                 }
 
@@ -353,18 +381,12 @@
 
                     if(enemy.nextThink < performance.now()) {
                         enemy.state = enemyThink[eType](enemy);
+                        enemy.nextThink = performance.now() + 2000;
                     }
 
                     // act
-                    var preVel = playerObject.actor.velocity.clone();
-                    var prePos = playerObject.position.clone();
+                    enemy.mesh.actor.applyForce(enemy.moveDir, dt);
                     enemy.mesh.actor.updatePhysics(dt);
-                    if(preVel.sub(playerObject.actor.velocity).length() > 0.0001) {
-                        console.log("player velocity not invariant under enemy update!");
-                    }
-                    if(prePos.sub(playerObject.position).length() > 0.0001) {
-                        console.log("player position not invariant under enemy update!");
-                    }
                 }
             }
 
@@ -383,6 +405,7 @@
                 new PhysicsActor(enemy.mesh);
                 enemy.mesh.actor.friction = 1.0;
                 enemy.mesh.actor.height = 1.0;
+                enemy.moveDir = new THREE.Vector3();
                 //console.log("spawn: ", enemyType);
             }
 
@@ -390,6 +413,14 @@
                 var mesh = new THREE.Mesh(bulletGeometries['energyGun'], enemyExplosionMaterial.clone());
                 mesh.position.copy(position);
                 enemyExplosions.add(mesh);
+            }
+
+            function getEnemyHeights() {
+                var heights = [];
+                for(var i = 0; i < enemies.length; ++i) {
+                    heights.push(enemies[i].mesh.position.y);
+                }
+                return heights;
             }
 
             function updateEnemyExplosions(dt) {
@@ -424,7 +455,13 @@
                     enemies.splice(index, 1);
                     enemyExplosion(enemy.mesh.position);
                     scene.remove(enemy.mesh);
-                    beaconEnemiesToKill -= 1;
+                    beaconEnemiesToKill = Math.max(0, beaconEnemiesToKill - 1);
+                    var delta = Math.floor(100 * 3 * Math.pow(beaconTimeFactor, beaconsCollected)) / 100;
+                    timeLeft += delta;
+                    document.getElementById("timeDeltas").innerHTML = " +" + delta;
+                    nextClearTimeDelta = performance.now() + 1000;
+                    var _sound = timeGainSound.play();
+                    //timeGainSound.rate(rand(0.95, 1.05), _sound);
                 }
             }
 
@@ -599,19 +636,24 @@
             function randomLevelPosition() {
                 //return new THREE.Vector3(0, 3, -5);
                 var bbox = new THREE.Box3().setFromObject(levelGeometry);
-                return new THREE.Vector3(rand(bbox.min.x, bbox.max.x), rand(bbox.min.y, bbox.max.y), rand(bbox.min.z, bbox.max.z));
+                var rescale = 0.95;
+                return new THREE.Vector3(rand(bbox.min.x*rescale, bbox.max.x*rescale),
+                                         rand(bbox.min.y*rescale, bbox.max.y*rescale),
+                                         rand(bbox.min.z*rescale, bbox.max.z*rescale));
             }
 
             function randomFloorPosition() {
-                var pos = randomLevelPosition();
-                raycaster.ray.origin.copy(pos);
-                raycaster.ray.direction.set(0, -1, 0);
-                var intersections = raycaster.intersectObject(levelGeometry, true);
-                if(intersections.length > 0) {
-                    pos.y -= intersections[0].distance;
-                    return pos;
-                } else {
-                    return new THREE.Vector3();
+                var found = false;
+                while(!found) {
+                    var pos = randomLevelPosition();
+                    raycaster.ray.origin.copy(pos);
+                    raycaster.ray.direction.set(0, -1, 0);
+                    var intersections = raycaster.intersectObject(levelGeometry, true);
+                    if(intersections.length > 0) {
+                        pos.y -= intersections[0].distance;
+                        found = true;
+                        return pos;
+                    }
                 }
             }
 
@@ -726,6 +768,7 @@
                 if(this.edgeGuard == false) {
                     this.velocity.add(force.clone().multiplyScalar(dt));
                 } else {
+
                     // Make sure the this can not walk off edges
                 }
             }
@@ -1061,12 +1104,14 @@
                     prevTime = time;
 
                     // movement
-                    var accell = 100.0;
-                    if(moveForward) playerObject.actor.velocity.z -= accell * dt;
-                    if(moveBackward) playerObject.actor.velocity.z += accell * dt;
+                    var accell = 120.0;
+                    var moveAccell = new THREE.Vector3();
+                    if(moveForward) moveAccell.z = -accell;
+                    if(moveBackward) moveAccell.z = accell;
 
-                    if(moveLeft) playerObject.actor.velocity.x -= accell * dt;
-                    if(moveRight) playerObject.actor.velocity.x += accell * dt;
+                    if(moveLeft) moveAccell.x = -accell;
+                    if(moveRight) moveAccell.x = accell;
+                    playerObject.actor.velocity.add(moveAccell.normalize().multiplyScalar(dt * accell));
 
                     // shooting
                     if(leftMouseDown && nextShot[currentWeapon] < time) {
@@ -1102,7 +1147,17 @@
                             if(playerBeaconRel.length() < 5.0) {
                                 beaconState = 'relocating';
                                 beaconPortSound.play();
-                                //beaconPortSound.pos(beacon.position.x, beacon.position.y, beacon.position.z);
+
+                                beaconsCollected += 1;
+                                var maxIndex = currentBeaconIndex;
+                                for(var i = 0; i < maxBeaconIndex.length; ++i) {
+                                    if(maxBeaconIndex[i] > beaconsCollected) break;
+                                    maxIndex = i;
+                                }
+                                nextBeaconIndex = currentBeaconIndex;
+                                while(nextBeaconIndex == currentBeaconIndex)
+                                    nextBeaconIndex = Math.floor(Math.random()*(maxIndex+1));
+                                timeLeft += beaconTimeMatrix[currentBeaconIndex][nextBeaconIndex];
                             }
                             break;
                         case 'relocating':
@@ -1120,11 +1175,11 @@
                     if(beaconState == 'relocating' && Math.abs(scale) < 0.1) {
                         beaconPortSound.play();
 
-                        beacon.position.copy(beaconPositions[nextBeaconPositionIndex]);
-                        nextBeaconPositionIndex += 1;
-                        if(nextBeaconPositionIndex >= beaconPositions.length) nextBeaconPositionIndex = 0;
+                        beacon.position.copy(beaconPositions[nextBeaconIndex]);
                         beaconState = 'hardened';
-                        beaconEnemiesToKill = 0;
+                        beaconEnemiesToKill = 5;
+                        currentBeaconIndex = nextBeaconIndex;
+                        nextBeaconIndex = undefined;
                     }
 
                     // HUD
@@ -1143,6 +1198,30 @@
 
                     beaconPosNDC.multiply(new THREE.Vector3(window.innerWidth/2, window.innerHeight/2, 0.0));
                     beaconIcon.position.copy(beaconPosNDC);
+
+                    timeLeft -= dt;
+                    var minutes = Math.floor(timeLeft / 60);
+                    var seconds = Math.floor(timeLeft - minutes*60);
+                    if(minutes < 10) minutes = "0" + minutes;
+                    if(seconds < 10) seconds = "0" + seconds;
+                    document.getElementById("timeLeft").innerHTML = minutes + ":" + seconds;
+                    if(timeLeft < 10.0) {
+                        document.getElementById("timeLeft").style.color = "#ff4040";
+                    } else {
+                        document.getElementById("timeLeft").style.color = "#40ff40";
+                    }
+                    if(nextClearTimeDelta < time) {
+                        document.getElementById("timeDeltas").innerHTML = "";
+                    }
+
+                    document.getElementById("inhibitorsLeft").innerHTML = beaconEnemiesToKill;
+                    if(beaconEnemiesToKill > 0) {
+                        document.getElementById("inhibitorsLeft").style.color = "#ffff40";
+                    } else {
+                        document.getElementById("inhibitorsLeft").style.color = "#40ff40";
+                    }
+
+                    document.getElementById("beaconsGot").innerHTML = beaconsCollected;
                 } else {
                     if(beaconSound.playing()) beaconSound.pause();
                     prevTime = performance.now();
