@@ -53,7 +53,14 @@
                 text-align: center;
 
                 cursor: pointer;
+                font-size: 20px;
 
+            }
+
+            #time {
+                position:absolute;
+                font-size: 60px;
+                color: #40ff40;
             }
 
         </style>
@@ -69,8 +76,18 @@
             <div id="instructions">
                 <span style="font-size:40px">Click to play</span>
                 <br />
-                (W, A, S, D = Move, SPACE = Jump, MOUSE = Look around)
+                While walking the cyberspace you were trapped in a strange place and your time is running out!
+                Destroy inhibitors to gain time and wear down the barrier of the beacon!
+                Try to keep the beacon from contacting security systems.
+                <br/><br/>
+                (W, A, S, D = Move, SPACE = Jump, MOUSE = Look around, LEFT CLICK = Shoot, RIGHT CLICK = Switch weapons)
+                <br/><br/>
+                <span style="font-size:40px">Loading...<span id="loadingProgress">0</span>%</span>
             </div>
+        </div>
+
+        <div id="time">
+            Time left: <span id="timeLeft">00:00</span>
         </div>
 
         <script>
@@ -93,14 +110,20 @@
             enemyHitSound = new Howl({src:['Sounds/Hit.ogg']});
             enemyHitSound.pannerAttr(pannerAttrs);
 
-            beaconSound = new Howl({src:['Sounds/Machinery.ogg']});
+            beaconSound = new Howl({src:['Sounds/Machinery.ogg'], loop: true, autoplay: true});
+            beaconSound.pause();
             beaconSound.pannerAttr(pannerAttrs);
+
+            beaconPortSound = new Howl({src:['Sounds/Beacon.ogg']});
+            //beaconPortSound.pannerAttr(pannerAttrs);
 
             var camera, scene, renderer;
             var geometry, boxMaterial, mesh;
             var controlsEnabled = false;
             var playerPitchObject, playerObject;
             var beaconIcon;
+            var timeLeft = 60*1000;
+            var loadingDone = false;
 
             var levelGeometry;
 
@@ -146,32 +169,13 @@
                 document.addEventListener( 'webkitpointerlockerror', pointerlockerror, false );
 
                 instructions.addEventListener( 'click', function ( event ) {
-                    instructions.style.display = 'none';
+                    if(loadingDone) {
+                        instructions.style.display = 'none';
 
-                    // Ask the browser to lock the pointer
-                    element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
-
-                    if ( /Firefox/i.test( navigator.userAgent ) ) {
-                        var fullscreenchange = function ( event ) {
-                            if ( document.fullscreenElement === element || document.mozFullscreenElement === element || document.mozFullScreenElement === element ) {
-
-                                document.removeEventListener( 'fullscreenchange', fullscreenchange );
-                                document.removeEventListener( 'mozfullscreenchange', fullscreenchange );
-
-                                element.requestPointerLock();
-                            }
-                        };
-
-                        document.addEventListener( 'fullscreenchange', fullscreenchange, false );
-                        document.addEventListener( 'mozfullscreenchange', fullscreenchange, false );
-
-                        element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
-
-                        element.requestFullscreen();
-                    } else {
+                        // Ask the browser to lock the pointer
+                        element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
                         element.requestPointerLock();
                     }
-
                 }, false );
 
             } else {
@@ -722,7 +726,7 @@
                 if(this.edgeGuard == false) {
                     this.velocity.add(force.clone().multiplyScalar(dt));
                 } else {
-                    // Make sure the this can not walk of edges
+                    // Make sure the this can not walk off edges
                 }
             }
 
@@ -873,7 +877,8 @@
 
                 var manager = new THREE.LoadingManager();
                 manager.onProgress = function ( item, loaded, total ) {
-                    console.log( item, loaded, total );
+                    if(loaded == total) loadingDone = true;
+                    document.getElementById("loadingProgress").innerHTML = Math.floor(loaded/total*100);
                 };
                 var jsonLoader = new THREE.JSONLoader(manager);
                 var texLoader = new THREE.TextureLoader(manager);
@@ -1094,7 +1099,11 @@
                             break;
                         case 'vulnerable':
                             beaconBarrier.visible = false;
-                            if(playerBeaconRel.length() < 5.0) beaconState = 'relocating';
+                            if(playerBeaconRel.length() < 5.0) {
+                                beaconState = 'relocating';
+                                beaconPortSound.play();
+                                //beaconPortSound.pos(beacon.position.x, beacon.position.y, beacon.position.z);
+                            }
                             break;
                         case 'relocating':
                             beaconRotationSpeed = 10.0;
@@ -1105,8 +1114,12 @@
                     beacon.rotation.y += beaconRotationSpeed * dt;
                     var scale = (Math.cos(performance.now() / 1000 * 3.0)*0.5+0.5) * (maxBeaconScale - minBeaconScale) + minBeaconScale;
                     beacon.scale.set(scale, scale, scale);
+                    if(!beaconSound.playing()) beaconSound.play();
+                    beaconSound.pos(beacon.position.x, beacon.position.y, beacon.position.z);
 
                     if(beaconState == 'relocating' && Math.abs(scale) < 0.1) {
+                        beaconPortSound.play();
+
                         beacon.position.copy(beaconPositions[nextBeaconPositionIndex]);
                         nextBeaconPositionIndex += 1;
                         if(nextBeaconPositionIndex >= beaconPositions.length) nextBeaconPositionIndex = 0;
@@ -1131,6 +1144,7 @@
                     beaconPosNDC.multiply(new THREE.Vector3(window.innerWidth/2, window.innerHeight/2, 0.0));
                     beaconIcon.position.copy(beaconPosNDC);
                 } else {
+                    if(beaconSound.playing()) beaconSound.pause();
                     prevTime = performance.now();
                 }
 
