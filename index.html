@@ -273,6 +273,8 @@
 
             var ammo = 2;
             var ammoIndicators = [];
+            var ammoGainThing;
+            var ammoGainThingEvolution = 100.0;
 
             var rifleMesh = new THREE.Object3D();
             var grenadeMesh = new THREE.Object3D();
@@ -476,6 +478,7 @@
                     //timeGainSound.rate(rand(0.95, 1.05), _sound);
                     ammoIndicators[ammo].material.color = new THREE.Vector3(0.1, 1.0, 0.1);
                     ammo = Math.min(5, ammo + 1);
+                    ammoGainThingEvolution = 0.0;
                 }
             }
 
@@ -1076,6 +1079,11 @@
                     beaconIconTexture = texture;
                 })
 
+                ammoGainThing = new THREE.Mesh(new THREE.SphereGeometry(0.2, 32, 32), new THREE.MeshBasicMaterial({color: 0x60ff60, transparent: true, opacity: 0.5}));
+                ammoGainThing.position.set(0.27, -0.104, -0.444);
+                ammoGainThing.scale.set(0.1, 0.1, 0.1);
+                weaponScene.add(ammoGainThing);
+
                 // enemies
                 jsonLoader.load("Drone.json", function(geometry) {
                     enemyGeometries['cannonFodder'] = geometry;
@@ -1181,6 +1189,14 @@
                     weaponScene.position.z = weaponKnockback * 0.05;
                     weaponKnockback -= Math.max(weaponKnockback * 5.0 * dt, 1.0 * dt);
                     weaponKnockback = Math.max(0, weaponKnockback);
+
+                    ammoGainThingEvolution += dt;
+                    var scale = 0.1;
+                    var duration = 0.5;
+                    if(ammoGainThingEvolution < duration) {
+                        scale = Math.sin(ammoGainThingEvolution/duration*Math.PI);
+                    }
+                    ammoGainThing.scale.set(scale, scale, scale);
 
                     playerObject.actor.updatePhysics(dt);
                     updateEnemies(dt)
