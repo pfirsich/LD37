@@ -134,7 +134,7 @@
             var controlsEnabled = false;
             var playerPitchObject, playerObject;
             var beaconIcon;
-            var timeLeft = 60;
+
             var loadingDone = false;
 
             var nextClearTimeDelta = 0;
@@ -325,21 +325,23 @@
             var beaconMaterial;
             var beaconGeometry;
             var beaconPositions = [];
-            var beaconState = 'hardened';
+            var beaconState = 'vulnerable';
             var minBeaconScale;
             var maxBeaconScale;
             var beaconBarrier;
             var beaconEnemiesToKill = 2;
 
             var beaconTimeMatrix = [
-                [ 0, 45, 45, 45, 45, 45, 45],
-                [45,  0, 45, 45, 45, 45, 45],
-                [45, 45,  0, 45, 45, 45, 45],
-                [45, 45, 45,  0, 45, 45, 45],
-                [45, 45, 45, 45,  0, 45, 45],
-                [45, 45, 45, 45, 45,  0, 45],
-                [45, 45, 45, 45, 45, 45,  0],
-            ]
+                [20, 15, 15, 15, 15, 15, 15],
+                [15,  0, 15, 15, 15, 15, 15],
+                [15, 15,  0, 15, 15, 15, 15],
+                [15, 15, 15,  0, 15, 15, 15],
+                [15, 15, 15, 15,  0, 15, 15],
+                [15, 15, 15, 15, 15,  0, 15],
+                [15, 15, 15, 15, 15, 15,  0],
+            ];
+
+            var timeLeft = beaconTimeMatrix[0][0];
 
             var beaconsCollected = 0;
             var maxBeaconIndex = [0, 1, 2, 5, 8, 10, 12];
@@ -488,7 +490,7 @@
                     enemyExplosion(enemy.mesh.position);
                     scene.remove(enemy.mesh);
                     beaconEnemiesToKill = Math.max(0, beaconEnemiesToKill - 1);
-                    var delta = Math.floor(100 * 3 * Math.pow(beaconTimeFactor, beaconsCollected)) / 100;
+                    var delta = Math.max(1.0, Math.floor(100 * 3 * Math.pow(beaconTimeFactor, beaconsCollected)) / 100);
                     timeLeft += delta;
                     document.getElementById("timeDeltas").innerHTML = " +" + delta;
                     nextClearTimeDelta = performance.now() + 1000;
@@ -1091,7 +1093,7 @@
                 })
 
 
-                texLoader.load("BeaconIconSmall_shield.png", function(texture) {
+                texLoader.load("BeaconIconSmall.png", function(texture) {
                     beaconIconShieldTexture = texture;
                     var width = 64;
                     var height = 64;
@@ -1099,9 +1101,9 @@
                     hudScene.add(beaconIcon);
                 })
 
-                texLoader.load("BeaconIconSmall.png", function(texture) {
+                /*texLoader.load("BeaconIconSmall.png", function(texture) {
                     beaconIconTexture = texture;
-                })
+                })*/
 
                 ammoGainThing = new THREE.Mesh(new THREE.SphereGeometry(0.2, 32, 32), new THREE.MeshPhongMaterial({color: 0x60ff60, transparent: true, opacity: 0.5}));
                 ammoGainThing.position.set(0.27, -0.104, -0.444);
@@ -1231,8 +1233,6 @@
                     var beaconRotationSpeed = 2.0;
                     switch(beaconState) {
                         case 'hardened':
-                            minBeaconScale = 2.0;
-                            maxBeaconScale = 2.5;
                             beaconBarrier.visible = true;
                             if(beaconEnemiesToKill <= 0) {
                                 beaconState = 'vulnerable';
@@ -1241,6 +1241,8 @@
                             }
                             break;
                         case 'vulnerable':
+                            minBeaconScale = 2.0;
+                            maxBeaconScale = 2.5;
                             beaconBarrier.visible = false;
                             if(playerBeaconRel.length() < 5.0) {
                                 beaconState = 'relocating';
@@ -1255,7 +1257,9 @@
                                 nextBeaconIndex = currentBeaconIndex;
                                 while(nextBeaconIndex == currentBeaconIndex)
                                     nextBeaconIndex = Math.floor(Math.random()*(maxIndex+1));
-                                timeLeft += Math.max(15, beaconTimeMatrix[currentBeaconIndex][nextBeaconIndex]);
+                                timeLeft += beaconTimeMatrix[currentBeaconIndex][nextBeaconIndex] * Math.pow(beaconTimeFactor, beaconsCollected);
+                                document.getElementById("timeDeltas").innerHTML = " +" + delta;
+                                nextClearTimeDelta = performance.now() + 1000;
                             }
                             break;
                         case 'relocating':
@@ -1272,10 +1276,10 @@
 
                     if(beaconState == 'relocating' && Math.abs(scale) < 0.1) {
                         beaconPortSound.play();
-                        beaconIcon.material.map = beaconIconShieldTexture;
+                        //beaconIcon.material.map = beaconIconShieldTexture;
 
                         beacon.position.copy(beaconPositions[nextBeaconIndex]);
-                        beaconState = 'hardened';
+                        beaconState = 'vulnerable';
                         beaconEnemiesToKill = 3;
                         currentBeaconIndex = nextBeaconIndex;
                         nextBeaconIndex = undefined;
