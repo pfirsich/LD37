@@ -76,12 +76,13 @@
 
         <div id="blocker">
             <div id="instructions">
-                <span style="font-size: 50px">Please strongly consider using Chrome for this game!</span>
-                <span style="color: 0xffdddd">
-                    <br />
-                    Try to reach as many beacons as you can.<br/>Destroy the drones to regain ammunition and time for your secondary weapon.<br/>Use it to rocket jump! <br/><a href="">https://github.com/pfirsich/LD37</a>
-                    <br/><br/>
+                <span style="font-size: 50px">Please strongly consider using Chrome for this game!</span><br/>
+                <span>
+                    Try to reach as many beacons as you can.<br/>Destroy the drones to regain ammunition and time for your secondary weapon.<br/>
+                <span style="color: #ff8080">
+                    Use left-click to ride along walls and right-click to rocket jump!
                 </span>
+                <br/><br/>
                 (W, A, S, D = Move, SPACE = (double) Jump, MOUSE = Look around, LEFT CLICK = Shoot, RIGHT CLICK = Switch weapons)
                 <br/><br/>
                 <span style="font-size:40px">Loading...<span id="loadingProgress">0</span>%</span><br/>
@@ -264,7 +265,7 @@
             }
 
             var weaponDamage = {
-                rifle: 15,
+                rifle: 17,
                 energyGun: 200,
             }
 
@@ -962,7 +963,7 @@
                             }
                             break;
 
-                        case 8: // backspace
+                        case 36: // pos 1
                             freeRoam = true;
                             enableGame();
                             document.getElementById('info').innerHTML = "<span style='color: 0x00ff00'>free roam mode<br/>K to save position, L to teleport</span>"
@@ -1389,7 +1390,7 @@
 
                         if(timeLeft <= 0) {
                             var instructions = document.getElementById("instructions");
-                            instructions.innerHTML = "<span style='font-size: 40'>Time's up!<br/>You reached " + beaconsCollected + " beacons!<br/>If you want to try out things in free-roam mode, press BACKSPACE. Press RETURN to retry!</span>";
+                            instructions.innerHTML = "<span style='font-size: 40'>Time's up!<br/>You reached " + beaconsCollected + " beacons!<br/>If you want to try out things in free-roam mode, press HOME. Press RETURN to retry!</span>";
                             disableGame();
                         }
 
