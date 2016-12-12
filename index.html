@@ -93,7 +93,7 @@
                 <span style="text-align: right;">beacons got: <span id="beaconsGot">0</span></span>
             </div>
             time left: <span id="timeLeft">00:00</span><span id="timeDeltas" style="color: #80ff80"></span><br/>
-            drones left: <span id="inhibitorsLeft" style="color: #ffff00"></span>
+            <!--drones left: <span id="inhibitorsLeft" style="color: #ffff00"></span>-->
         </div>
 
         <script>
@@ -254,7 +254,7 @@
 
             var shotInterval = {
                 rifle: 100,
-                energyGun: 1500, //700, // We know you can cheat this by spamming 1-2-1-2
+                energyGun: 1300, //700, // We know you can cheat this by spamming 1-2-1-2
             }
 
             var weaponDamage = {
@@ -1185,7 +1185,8 @@
                     // time
                     var time = performance.now();
                     if(prevTime == null) prevTime = performance.now();
-                    var dt = (time - prevTime) / 1000;
+                    var dt_ms = time - prevTime; //Math.min(time - prevTime, 10);
+                    var dt = dt_ms / 1000;
                     prevTime = time;
 
                     // movement
@@ -1312,12 +1313,12 @@
                         document.getElementById("timeDeltas").innerHTML = "";
                     }
 
-                    document.getElementById("inhibitorsLeft").innerHTML = beaconEnemiesToKill;
+                    /*document.getElementById("inhibitorsLeft").innerHTML = beaconEnemiesToKill;
                     if(beaconEnemiesToKill > 0) {
                         document.getElementById("inhibitorsLeft").style.color = "#ffff40";
                     } else {
                         document.getElementById("inhibitorsLeft").style.color = "#40ff40";
-                    }
+                    }*/
 
                     document.getElementById("beaconsGot").innerHTML = beaconsCollected;
                 } else {
