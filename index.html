@@ -553,6 +553,9 @@
                 bullet.bulletType = type;
                 var _sound = weaponSounds[type].play();
                 weaponSounds[type].rate(rand(0.9, 1.1), _sound);
+                bullet.hiddenFor = 2;
+                if(type == 'energyGun') bullet.hiddenFor = 4;
+                bullet.mesh.visible = false;
                 scene.add(bullet.mesh);
 
                 bullets[nextBulletIndex] = bullet;
@@ -570,6 +573,10 @@
                 for(var i = 0; i < maxBullets; ++i) {
                     var bullet = bullets[i];
                     if(bullet == undefined) break;
+
+                    bullet.hiddenFor -= 1;
+                    if(bullet.hiddenFor == 0) bullet.mesh.visible = true;
+
                     if(bullet.alive) {
                         bullet.lifetime -= dt;
                         if(bullet.lifetime <= 0) {
@@ -935,12 +942,12 @@
                                 spaceWasDown = false;
                             }
                             break;
-                        case 32: // 1
-                            break;
 
-                        case 50: // 2
-                            break;
 
+                        case 74:
+                            ammo = 5;
+                            for(var i = 0; i < 5; ++i) ammoIndicators[i].material.color = new THREE.Vector3(1.0, 1.0, 1.0);
+                            break;
                         case 75:
                             savedPos = playerObject.position.clone();
                             break;
