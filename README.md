@@ -2,7 +2,7 @@
 QUARK is a movement based ego shooter, where you have to collect as many beacons as you can.
 Destroy the drones to gain time and ammo for your energy grenades.
 
-I strongly advise you to watch a clip of some moves you can do in the game [HERE](YOUTUBELINK)
+I strongly advise you to watch a clip of some moves you can do in the game [HERE](https://www.youtube.com/watch?v=0P2gyMfaU5M)
 
 ## Tips
 * You can double jump!
