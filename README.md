@@ -22,9 +22,8 @@ RIGHT MOUSE to shoot energy grenades
 SPACE to (double) jump
 
 ## Credits
-Joel Schumacher - Programming
-
-Raphael Willerding - Art, Sound
+* [Joel Schumacher](http://theshoemaker.de) - Programming
+* [Raphael Willerding](https://www.artstation.com/artist/kerberos22) - Art, Sound
 
 ## Technology / Resources
 * [three.js](http://threejs.org/)
