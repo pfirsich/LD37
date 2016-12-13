@@ -858,10 +858,22 @@
 
                 var prePos = this.obj.position.clone();
                 var postPos = prePos.clone().add(this.velocity.clone().multiplyScalar(dt));
-                if(lineOfSight(prePos, postPos)) {
-                    this.obj.position.copy(postPos);
+                var delta = postPos.clone().sub(prePos);
+                raycaster.ray.origin.copy(prePos);
+                raycaster.ray.direction.copy(delta.clone().normalize());
+                var intersections = raycaster.intersectObject(levelGeometry, true);
+                if(intersections.length > 0 && intersections[0].distance < delta.length()) {
+                    var normal = intersections[0].face.normal.clone().normalize();
+                    console.log(normal.dot(new THREE.Vector3(0, -1, 0)));
+                    if(normal.dot(new THREE.Vector3(0, -1, 0)) > 0.9 ) {
+                        this.obj.position.copy(postPos); // jump from under a platform, integrate anyways
+                    } else {
+                        this.obj.position.add(delta.clone().normalize().multiplyScalar(intersections[0].distance));
+                        this.velocity.sub(normal.multiplyScalar(this.velocity.dot(normal)));
+                    }
                 } else {
-                    console.log("DANGER");
+                    this.obj.position.copy(postPos);
+
                 }
                 if(print) console.log("pos", this.obj.position);
 
