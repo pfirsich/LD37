@@ -858,6 +858,11 @@
 
                 var prePos = this.obj.position.clone();
                 var postPos = prePos.clone().add(this.velocity.clone().multiplyScalar(dt));
+                if(lineOfSight(prePos, postPos)) {
+                    this.obj.position.copy(postPos);
+                } else {
+                    console.log("DANGER");
+                }
                 if(print) console.log("pos", this.obj.position);
 
                 this.collide(dt);
