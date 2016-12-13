@@ -508,7 +508,6 @@
                     var _sound = timeGainSound.play();
                     //timeGainSound.rate(rand(0.95, 1.05), _sound);
                     setAmmo(ammo + 1);
-                    ammoGainThingEvolution = 0.0;
                 }
             }
 
@@ -857,7 +856,8 @@
                 this.velocity.z -= this.velocity.z * this.friction * dt;
                 if(print) console.log("pre integrage", this.velocity);
 
-                this.obj.position.add(this.velocity.clone().multiplyScalar(dt));
+                var prePos = this.obj.position.clone();
+                var postPos = prePos.clone().add(this.velocity.clone().multiplyScalar(dt));
                 if(print) console.log("pos", this.obj.position);
 
                 this.collide(dt);
@@ -1211,6 +1211,7 @@
             }
 
             function setAmmo(v) {
+                if(v > ammo) ammoGainThingEvolution = 0.0;
                 ammo = Math.max(Math.min(v, 5), 0);
                 for(var i = 0; i < 5; ++i) {
                     if(i < ammo) {
