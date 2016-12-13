@@ -2,7 +2,7 @@
 GAME NAME is a movement based ego shooter, where you have to collect as many beacons as you can.
 Destroy the drones to gain time and ammo for your energy grenades.
 
-I strongly advise you to watch a clip 
+I strongly advise you to watch a clip of some moves you can do in the game [HERE](YOUTUBELINK)
 
 ## Tips
 * You can double jump!
@@ -14,12 +14,16 @@ I strongly advise you to watch a clip
 
 ## Controls
 WASD to move
+
 LEFT MOUSE to shoot the rifle
+
 RIGHT MOUSE to shoot energy grenades
+
 SPACE to (double) jump
 
 ## Credits
 Joel Schumacher - Programming
+
 Raphael Willerding - Art, Sound
 
 ## Technology / Resources
