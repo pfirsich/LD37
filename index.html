@@ -448,7 +448,7 @@
                 enemy.mesh.actor.edgeGuard = true;
                 enemy.moveDir = new THREE.Vector3();
                 enemy.age = 0.0;
-                //console.log("spawn: ", enemyType);
+                ////console.log("spawn: ", enemyType);
             }
 
             function enemyExplosion(position) {
@@ -761,9 +761,9 @@
 
                     raycaster.ray.origin.set(x, this.obj.position.y, z);
 
-                    if(print) console.log("raycast: ", raycaster.ray.origin, raycaster.ray.direction);
+                    //if(print) console.log("raycast: ", raycaster.ray.origin, raycaster.ray.direction);
                     var rayIntersections = raycaster.intersectObject(levelGeometry, true);
-                    if(print) console.log("closest per ray:", rayIntersections[0].distance, rayIntersections[0].face.normal);
+                    //if(print) console.log("closest per ray:", rayIntersections[0].distance, rayIntersections[0].face.normal);
                     if(rayIntersections.length > 0) {
                         rayIntersections[0].dirX = Math.cos(angle);
                         rayIntersections[0].dirZ = Math.sin(angle);
@@ -778,17 +778,19 @@
                     //console.log("intersection: ", intersections[i].distance);
                     var diff = intersections[i].distance - this.height;
                     if(diff < 0) {
-                        if(print) console.log("diff:", diff);
+                        //if(print) console.log("diff:", diff);
                         this.obj.position.y -= diff;
-                        if(print) console.log("pos:", this.obj.position.y);
+                        //if(print) console.log("pos:", this.obj.position.y);
                         var normal = intersections[i].face.normal;
                         if(print) {
-                            console.log("normal: ", normal);
-                            console.log("pre", this.velocity);
+                            //console.log("normal: ", normal);
+                            //console.log("pre", this.velocity);
                         }
+                        var velY = this.velocity.y;
                         this.velocity.sub(normal.multiplyScalar(this.velocity.dot(normal) / normal.dot(normal)));
+                        if(velY > 0) this.velocity.y = velY;
                         if(print) {
-                            console.log("post", this.velocity);
+                            //console.log("post", this.velocity);
                         }
                         isOnObject = true;
                         break;
@@ -851,10 +853,10 @@
                 this.velocity.y -= 9.8 * 2.0 * dt;
 
                 // friction
-                if(print) console.log("pre friction", this.velocity);
+                //if(print) console.log("pre friction", this.velocity);
                 this.velocity.x -= this.velocity.x * this.friction * dt;
                 this.velocity.z -= this.velocity.z * this.friction * dt;
-                if(print) console.log("pre integrage", this.velocity);
+                //if(print) console.log("pre integrage", this.velocity);
 
                 var prePos = this.obj.position.clone();
                 var postPos = prePos.clone().add(this.velocity.clone().multiplyScalar(dt));
@@ -864,7 +866,7 @@
                 var intersections = raycaster.intersectObject(levelGeometry, true);
                 if(intersections.length > 0 && intersections[0].distance < delta.length()) {
                     var normal = intersections[0].face.normal.clone().normalize();
-                    console.log(normal.dot(new THREE.Vector3(0, -1, 0)));
+                    //console.log(normal.dot(new THREE.Vector3(0, -1, 0)));
                     if(normal.dot(new THREE.Vector3(0, -1, 0)) > 0.9 ) {
                         this.obj.position.copy(postPos); // jump from under a platform, integrate anyways
                     } else {
@@ -873,11 +875,9 @@
                     }
                 } else {
                     this.obj.position.copy(postPos);
-
                 }
-                if(print) console.log("pos", this.obj.position);
-
                 this.collide(dt);
+                //if(print) console.log("pos", this.obj.position);
             }
 
             PhysicsActor.prototype.applyForce = function(force, dt) {
@@ -923,7 +923,7 @@
                 scene.add(playerObject);
 
                 var onMouseMove = function(event) {
-                    //console.log(controlsEnabled);
+                    ////console.log(controlsEnabled);
                     if (controlsEnabled === false) return;
 
                     var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
