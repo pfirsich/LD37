@@ -2,13 +2,13 @@
 QUARK is a movement based ego shooter, where you have to collect as many beacons as you can.
 Destroy the drones to gain time and ammo for your energy grenades.
 
-I strongly advise you to watch a clip of some moves you can do in the game [HERE](https://www.youtube.com/watch?v=0P2gyMfaU5M)
-
 ## Tips
 * You can double jump!
 * Jump and rocket boost at the same time!
 * Sometimes you want to combine left and right click
-* You can use the grenades to boost yourself on walls
+* You can use the grenades to boost yourself on wall
+
+To get more of an idea of how you can play the game and some moves you can do, watch this [Youtube video](https://www.youtube.com/watch?v=0P2gyMfaU5M)
 
 [CLICK HERE TO PLAY](https://pfirsich.github.io/LD37/)
 
