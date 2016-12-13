@@ -877,7 +877,7 @@
                 var width = window.innerWidth;
                 var height = window.innerHeight;
                 aspect = width / height;
-                camera = new THREE.PerspectiveCamera( 80, aspect, 0.1, 150 );
+                camera = new THREE.PerspectiveCamera( 80, aspect, 0.1, 200 );
                 renderCamera = camera.clone();
                 weaponCamera = new THREE.PerspectiveCamera( 90 / aspect, aspect, 0.01, 5 );
                 hudCamera = new THREE.OrthographicCamera(-width/2, width/2, height/2, -height/2, 1, 10);
@@ -1057,30 +1057,19 @@
                         rifleMesh = new THREE.Mesh(geometry, material);
                         rifleMesh.visible = true;
                         weaponScene.add(rifleMesh);
+
+                        var pos = new THREE.Vector3(0.183, -0.087, -0.457);
+                        for(var i = 0; i < 5; ++i) {
+                            ammoIndicators.push(new THREE.Mesh(indicatorGeometry, indicatorMaterial.clone()));
+                            ammoIndicators[i].position.copy(pos).add(new THREE.Vector3(0, 0, 0.021 * i));
+                            rifleMesh.add(ammoIndicators[i]);
+                        }
+                        setAmmo(ammo);
                     }/*, onProgress/*, onError*/);
                 });
 
                 var indicatorGeometry = new THREE.BoxGeometry(0.017, 0.01, 0.017, 1, 1, 1);
                 var indicatorMaterial = new THREE.MeshPhongMaterial({color: 0x4c4c4c});
-
-                // energy ball thing
-                texLoader.load("Waffe2.png", function(texture) {
-                    var material = new THREE.MeshPhongMaterial({map: texture});
-
-                    jsonLoader.load( 'Waffe2.json', function (geometry) {
-                        grenadeMesh = new THREE.Mesh(geometry, material);
-                        grenadeMesh.visible = false;
-                        weaponScene.add(grenadeMesh);
-
-                        var pos = new THREE.Vector3(0.214, -0.103, -0.46);
-                        for(var i = 0; i < 5; ++i) {
-                            ammoIndicators.push(new THREE.Mesh(indicatorGeometry, indicatorMaterial.clone()));
-                            ammoIndicators[i].position.copy(pos).add(new THREE.Vector3(0, 0, 0.021 * i));
-                            grenadeMesh.add(ammoIndicators[i]);
-                        }
-                        setAmmo(ammo);
-                    }/*, onProgress/*, onError*/);
-                });
 
                 // bullets
                 jsonLoader.load("Plasma.json", function(geometry) {bulletGeometries["rifle"] = geometry;})
@@ -1309,6 +1298,7 @@
                                     beaconIcon.visible = false;
                                     beaconState = 'relocating';
                                     beaconPortSound.play();
+                                    setAmmo(ammo + 1);
 
                                     beaconsCollected += 1;
                                     var maxIndex = currentBeaconIndex;
@@ -1352,7 +1342,6 @@
                         beaconEnemiesToKill = 3;
                         currentBeaconIndex = nextBeaconIndex;
                         nextBeaconIndex = undefined;
-                        setAmmo(ammo + 1);
                     }
 
                     // HUD
