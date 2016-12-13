@@ -1,5 +1,5 @@
-# GAME NAME
-GAME NAME is a movement based ego shooter, where you have to collect as many beacons as you can.
+# QUARK
+QUARK is a movement based ego shooter, where you have to collect as many beacons as you can.
 Destroy the drones to gain time and ammo for your energy grenades.
 
 I strongly advise you to watch a clip of some moves you can do in the game [HERE](YOUTUBELINK)
